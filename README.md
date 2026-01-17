@@ -1,7 +1,7 @@
 # Free-Mail-Service
 © 2026 FMS All rights reserved.
 
-## MIT License
+#### MIT License
 
 Copyright (c) 2026 FMS365
 
