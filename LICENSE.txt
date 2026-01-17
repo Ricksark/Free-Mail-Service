@@ -1,0 +1,39 @@
+-------------------------------------------------------------------------
+                        FMS SECURE MAIL LICENSE
+                      Copyright (c) 2026 FMS365
+-------------------------------------------------------------------------
+
+SOFTWARE: FMS Secure Mail (v3.3 and future versions)
+AUTHOR:   FMS365 (https://fms365.blogspot.com/)
+DATE:     January 17, 2026
+
+1. GRANT OF LICENSE
+   Permission is hereby granted, free of charge, to any person obtaining 
+   a copy of this software (the "Software"), to use the Software for 
+   personal or educational purposes, subject to the conditions below.
+
+2. RESTRICTIONS
+   a. VISUAL CREDIT: The "Designed by FMS365" footer link and the 
+      "FMS Security" branding must remain visible, intact, and functional 
+      in the user interface.
+   b. CODE INTEGRITY: The copyright protection scripts included in the 
+      Software (specifically those validating the footer link) may not 
+      be disabled, removed, or circumvented.
+   c. COMMERCIAL USE: This Software may not be sold, resold, or bundled 
+      with commercial products without express written permission from 
+      the Author.
+
+3. MODIFICATIONS
+   You are allowed to modify the visual styling (CSS) for personal use, 
+   provided that the restrictions in Section 2 are met.
+
+4. DISCLAIMER OF WARRANTY
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
+   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
+   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+-------------------------------------------------------------------------
