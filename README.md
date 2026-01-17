@@ -1,9 +1,9 @@
 # Free-Mail-Service
 © 2026 FMS All rights reserved.
 
-#### MIT License
+## MIT License
 
-Copyright (c) 2026 FMS365
+*Copyright (c) 2026 FMS365*
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
