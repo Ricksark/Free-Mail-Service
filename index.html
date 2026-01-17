@@ -1,0 +1,860 @@
+<!-- 
+  --- FMS v3.3 COMPLETE ---
+  Updated: Jan 17, 2026 - 3:20PM
+  Features: Live Mailbox, OTP Boxes, Footer, Limits, Persistence, Copyright Protection
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FMS Secure Mail</title>
+    <style>
+        :root {
+            --bg-body: #09090b;
+            --bg-surface: #18181b;
+            --bg-header: rgba(9, 9, 11, 0.95);
+            --primary: #8b5cf6;
+            --primary-hover: #7c3aed;
+            --accent: #06b6d4;
+            --text-main: #fafafa;
+            --text-muted: #a1a1aa;
+            --success: #10b981;
+            --danger: #ef4444;
+            --border: #27272a;
+            --input-bg: #000000;
+            --radius: 16px;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-body);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.15) 0px, transparent 50%);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* HEADER */
+        header {
+            background-color: var(--bg-header);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 1.5rem;
+            height: 70px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .brand {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .brand span { color: var(--primary); }
+
+        /* MAIN */
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 2rem 1rem;
+        }
+
+        .dashboard-card {
+            background-color: var(--bg-surface);
+            width: 100%;
+            max-width: 520px;
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: height 0.3s ease;
+            position: relative;
+        }
+
+        /* AUTH STEPS */
+        .step-container { display: none; animation: fadeIn 0.4s ease; }
+        .step-container.active { display: block; }
+
+        /* PROFILE CARD */
+        .user-profile-card {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+            border: 1px solid var(--border);
+            padding: 20px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+        .user-profile-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+            background: var(--primary);
+        }
+        .user-avatar { 
+            width: 64px; height: 64px; border-radius: 50%; object-fit: cover; 
+            border: 3px solid var(--bg-body); box-shadow: 0 0 0 2px var(--primary);
+            background: var(--bg-body);
+        }
+        .limit-badge {
+            font-size: 0.7rem; padding: 4px 8px; border-radius: 6px; 
+            background: #222; border: 1px solid var(--border);
+            cursor: pointer; margin-top: 5px; display: inline-block;
+        }
+        .limit-badge.active { color: var(--success); border-color: var(--success); }
+        .limit-badge.bypassed { color: var(--danger); border-color: var(--danger); }
+
+        /* EMAIL CARD */
+        .email-card { 
+            background: rgba(6, 182, 212, 0.05); border: 1px solid rgba(6, 182, 212, 0.2); 
+            padding: 1.5rem; text-align: center; border-radius: var(--radius); 
+            margin-bottom: 1.5rem; cursor: pointer; position: relative; 
+        }
+        .email-card:hover { background: rgba(6, 182, 212, 0.08); }
+
+        /* NEW MSG PREVIEW BOX */
+        .msg-preview-card {
+            background: rgba(16, 185, 129, 0.05);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: var(--radius);
+            padding: 1.2rem;
+            margin-bottom: 1.5rem;
+            display: none; /* Hidden by default */
+            animation: slideDown 0.3s ease;
+        }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .msg-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .msg-from { font-weight: 700; color: var(--success); font-size: 0.95rem; }
+        .msg-time { font-size: 0.75rem; color: var(--text-muted); }
+        .msg-subject { font-weight: 600; font-size: 1.1rem; margin-bottom: 8px; color: #fff; }
+        .msg-body { font-size: 0.9rem; color: var(--text-muted); line-height: 1.5; font-family: 'Inter', sans-serif; }
+
+        /* LOGS */
+        .logs-window { 
+            background: #050505; height: 300px; padding: 20px; border-radius: 12px; 
+            font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; 
+            border: 1px solid var(--border); overflow-y: auto; margin-bottom: 15px; 
+        }
+        .log-item { margin-bottom: 5px; display: flex; gap: 8px; }
+        .log-time { color: var(--text-muted); opacity: 0.5; min-width: 50px; }
+
+        /* INPUTS & BUTTONS */
+        .input-group { margin-bottom: 1.5rem; position: relative; }
+        label { display: block; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem; font-weight: 600; }
+        
+        input.std-input { 
+            width: 100%; background: var(--input-bg); border: 1px solid var(--border); 
+            color: white; padding: 14px 16px; border-radius: 12px; font-size: 1rem; 
+            transition: all 0.2s; 
+        }
+        input.std-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2); }
+
+        /* OTP BOXES */
+        .otp-inputs { display: flex; gap: 8px; justify-content: center; margin-bottom: 1.5rem; }
+        .otp-box { 
+            width: 48px; height: 56px; 
+            background: var(--input-bg); border: 1px solid var(--border); border-radius: 12px;
+            color: white; font-size: 1.5rem; text-align: center; font-weight: 700;
+            transition: all 0.2s; caret-color: var(--primary);
+        }
+        .otp-box:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2); outline: none; transform: translateY(-2px); }
+        .otp-box::-webkit-outer-spin-button, .otp-box::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        button.action-btn { 
+            width: 100%; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); 
+            color: white; font-weight: 700; padding: 16px; border: none; border-radius: 12px; 
+            font-size: 1rem; cursor: pointer; transition: transform 0.2s; 
+            box-shadow: 0 4px 6px -1px rgba(139, 92, 246, 0.4); 
+        }
+        button.action-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(139, 92, 246, 0.5); }
+        button.action-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        
+        button.secondary-btn {
+            background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+            padding: 10px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
+        }
+
+        /* NOTIFICATIONS */
+        #notificationContainer { position: fixed; top: 20px; right: 20px; z-index: 100; display: flex; flex-direction: column; gap: 10px; }
+        .notification { 
+            background: var(--bg-surface); padding: 15px 20px; border-radius: 10px; 
+            border-left: 4px solid var(--primary); box-shadow: 0 10px 25px rgba(0,0,0,0.8); 
+            color: #fff; animation: fadeIn 0.3s ease; border: 1px solid var(--border); 
+            display: flex; align-items: center; gap: 10px; 
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* LOGOUT BUTTON */
+        .logout-btn {
+            position: absolute; top: 15px; right: 15px; 
+            background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); 
+            border-radius: 8px;
+            color: var(--danger); cursor: pointer; 
+            width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+        }
+        .logout-btn:hover { background: rgba(239, 68, 68, 0.2); }
+
+        /* FOOTER */
+        footer {
+            border-top: 1px solid var(--border);
+            background: var(--bg-surface);
+            padding: 2rem 1rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: auto;
+        }
+        footer .footer-links a { color: var(--primary); text-decoration: none; margin: 0 5px; }
+        footer .footer-links a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <div id="notificationContainer"></div>
+
+    <header>
+        <div class="brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+           <span> FMS</span>
+        </div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 20px;">
+            v3.3 Secured
+        </div>
+    </header>
+
+    <main>
+        <div class="dashboard-card">
+            
+            <!-- STEP 1: LOGIN (Chat ID) -->
+            <div id="stepLogin" class="step-container active">
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <div style="width: 60px; height: 60px; background: rgba(139, 92, 246, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto;">
+                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+                    </div>
+                    <h2 style="margin: 0;">Secure Login</h2>
+                    <p style="color: var(--text-muted); margin-top: 5px;">Enter your Telegram ID to receive an OTP.</p>
+                </div>
+
+                <div class="input-group">
+                    <label>Telegram User ID</label>
+                    <input type="tel" id="loginChatId" class="std-input" placeholder="e.g. 123456789">
+                    <div style="margin-top:8px; font-size:0.8rem; color:var(--text-muted); display:flex; justify-content:space-between;">
+                        <span>Bot will send a code</span>
+                        <a href="https://t.me/userinfobot" target="_blank" style="color:var(--accent); text-decoration:none;">Find my ID</a>
+                    </div>
+                </div>
+                <button onclick="requestOtp()" class="action-btn" id="btnRequestOtp">Get OTP Code</button>
+            </div>
+
+            <!-- STEP 2: VERIFY OTP -->
+            <div id="stepOtp" class="step-container">
+                <button onclick="goBackToLogin()" class="secondary-btn" style="margin-bottom: 20px;">← Back</button>
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <h2 style="margin: 0;">Verify Identity</h2>
+                    <p style="color: var(--text-muted); margin-top: 5px;">Enter the 6-digit code sent to your Telegram.</p>
+                </div>
+
+                <!-- OTP BOXES -->
+                <div class="otp-inputs" id="otpContainer">
+                    <input type="text" maxlength="1" class="otp-box" inputmode="numeric">
+                    <input type="text" maxlength="1" class="otp-box" inputmode="numeric">
+                    <input type="text" maxlength="1" class="otp-box" inputmode="numeric">
+                    <input type="text" maxlength="1" class="otp-box" inputmode="numeric">
+                    <input type="text" maxlength="1" class="otp-box" inputmode="numeric">
+                    <input type="text" maxlength="1" class="otp-box" inputmode="numeric">
+                </div>
+
+                <button onclick="verifyOtp()" class="action-btn" id="btnVerifyOtp">Verify & Login</button>
+            </div>
+
+            <!-- STEP 3: DASHBOARD -->
+            <div id="stepDashboard" class="step-container">
+                <!-- LOGOUT BUTTON -->
+                <button onclick="logout()" class="logout-btn" title="Logout">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                </button>
+
+                <!-- Profile Card -->
+                <div class="user-profile-card">
+                    <div class="user-avatar-container">
+                        <img id="dashAvatar" class="user-avatar" src="" alt="User">
+                    </div>
+                    <div class="user-info">
+                        <h3 id="dashName">User</h3>
+                        <p id="dashId" style="font-family:monospace; color:var(--text-muted); font-size:0.8rem;">ID: ...</p>
+                        
+                        <div id="limitBadge" class="limit-badge active" onclick="toggleAdminMode()">
+                            LIMIT: ACTIVE
+                        </div>
+                        <span id="creditCounter" style="font-size:0.7rem; color:var(--text-muted); margin-left: 8px;">(0/20)</span>
+                    </div>
+                </div>
+
+                <!-- Email Generator -->
+                <div id="genContainer">
+                    <div class="email-card" onclick="copyEmail()">
+                        <div style="font-size:0.7rem; color:var(--text-muted); margin-bottom:5px; text-transform:uppercase; letter-spacing:1px;"><b>Session Mail</b></div>
+                        <h3 id="generatedEmail" style="word-break: break-all;">Generating...</h3>
+                        <div style="font-size:0.7rem; color:var(--primary); margin-top:8px;">Tap to Copy</div>
+                    </div>
+
+                    <!-- NEW: INCOMING MESSAGE PREVIEW -->
+                    <div id="msgPreview" class="msg-preview-card">
+                        <div class="msg-header">
+                            <div class="msg-from" id="msgFrom">Sender</div>
+                            <div class="msg-time" id="msgTime">Now</div>
+                        </div>
+                        <div class="msg-subject" id="msgSubject">Subject</div>
+                        <div class="msg-body" id="msgBody">Message content...</div>
+                    </div>
+                    
+                    <button onclick="terminateSession()" style="width:100%; padding:12px; background:rgba(239, 68, 68, 0.1); border:1px solid var(--danger); color:var(--danger); border-radius:10px; cursor:pointer; font-size:0.9rem; margin-bottom:15px;">
+                        Stop Session
+                    </button>
+                </div>
+
+                <div id="limitReachedMsg" style="display:none; text-align:center; padding: 20px; border: 1px solid var(--danger); border-radius: 12px; background: rgba(239, 68, 68, 0.05); color: var(--danger);">
+                    <h3>Daily Limit Reached</h3>
+                    <p>You have used 20/20 mails today. Come back tomorrow.</p>
+                </div>
+
+                <!-- Logs -->
+                <div class="logs-window" id="consoleLogs">
+                    <div class="log-item"><span>Copyright  © all right resolved.</span><span>Powered by <b>MOS</b>.</span></div>
+                    <div class="log-item"><span class="log-time">SYS</span> <span>Welcome back.</span></div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer>
+        <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+             <span style="font-weight: 700; color: var(--text-main);">FMS Security</span>
+        </div>
+        <div style="margin-bottom: 8px;">
+            &copy; 2026 FMS Inc. All rights reserved.
+        </div>
+        
+        <!-- FMS CREDIT -->
+        <div style="margin-bottom: 12px; font-size: 0.8rem;">
+            Designed by <a id="fms-copyright" href="https://fms365.blogspot.com/" style="color: var(--text-muted); text-decoration: none;">FMS365</a> & <a id="PS2006" href="https://www.instagram.com/_priyangshu_2" style="color: var(--text-muted); text-decoration: none;">@_priyangshu_2</a>
+        </div>
+
+        <div class="footer-links">
+             <a href="#">Privacy Policy</a> • <a href="#">Terms of Service</a> • <a href="#">Support</a>
+        </div>
+    </footer>
+
+    <script>
+        // --- CONFIGURATION ---
+        const BOT_TOKEN = "YOUR_BOT_TOKEN";
+        const API_URL = "https://api.mail.tm";
+        const ADMIN_PASS = "ADMIN_PASS_ID";
+        const DAILY_LIMIT = 20;
+
+        // --- STATE ---
+        let jwtToken = "";
+        let pollingInterval = null;
+        let generatedOtp = null;
+        let currentUser = null; 
+
+        // --- INITIALIZATION ---
+        window.onload = function() {
+            setupOtpInputs(); 
+            checkSession();
+        };
+
+        // --- OTP BOXES LOGIC ---
+        function setupOtpInputs() {
+            const inputs = document.querySelectorAll('.otp-box');
+            
+            inputs.forEach((input, index) => {
+                input.addEventListener('input', (e) => {
+                    if (e.target.value.length === 1 && index < inputs.length - 1) {
+                        inputs[index + 1].focus();
+                    }
+                    if (e.target.value.length > 1) {
+                         e.target.value = e.target.value.slice(0, 1);
+                    }
+                });
+
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                        inputs[index - 1].focus();
+                    }
+                });
+
+                input.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    const text = (e.clipboardData || window.clipboardData).getData('text');
+                    if (!/^\d+$/.test(text)) return; 
+
+                    const chars = text.split('');
+                    inputs.forEach((inp, i) => {
+                        if (chars[i]) inp.value = chars[i];
+                    });
+                    
+                    const lastIndex = Math.min(chars.length - 1, inputs.length - 1);
+                    if(lastIndex >= 0) inputs[lastIndex].focus();
+                });
+            });
+        }
+
+        function clearOtpInputs() {
+            document.querySelectorAll('.otp-box').forEach(i => i.value = '');
+        }
+
+        function getOtpValue() {
+            let val = '';
+            document.querySelectorAll('.otp-box').forEach(i => val += i.value);
+            return val;
+        }
+
+        // --- NAVIGATION ---
+        function switchStep(stepId) {
+            document.querySelectorAll('.step-container').forEach(el => el.classList.remove('active'));
+            document.getElementById(stepId).classList.add('active');
+        }
+
+        // --- DATA PERSISTENCE & LIMITS ---
+        function getStorageData() {
+            const str = localStorage.getItem("fms_data");
+            return str ? JSON.parse(str) : { 
+                chatId: null, 
+                isLoggedIn: false,
+                limitEnabled: true,
+                usage: { date: "", count: 0 }
+            };
+        }
+
+        function saveStorageData(data) {
+            localStorage.setItem("fms_data", JSON.stringify(data));
+        }
+
+        function checkSession() {
+            const data = getStorageData();
+            if(data.isLoggedIn && data.chatId) {
+                fetchTelegramProfile(data.chatId).then(success => {
+                    if(success) {
+                        switchStep('stepDashboard');
+                        updateLimitUI();
+                        checkDailyLimitAndStart();
+                    } else {
+                        logout(); 
+                    }
+                });
+            } else {
+                switchStep('stepLogin');
+            }
+        }
+
+        function checkDailyLimitAndStart() {
+            const data = getStorageData();
+            const today = new Date().toISOString().split('T')[0];
+
+            if(data.usage.date !== today) {
+                data.usage.date = today;
+                data.usage.count = 0;
+                saveStorageData(data);
+            }
+
+            updateLimitUI();
+
+            if(data.limitEnabled && data.usage.count >= DAILY_LIMIT) {
+                document.getElementById('genContainer').style.display = 'none';
+                document.getElementById('limitReachedMsg').style.display = 'block';
+                log("Daily limit reached (20/20). Generation blocked.", "error");
+            } else {
+                document.getElementById('genContainer').style.display = 'block';
+                document.getElementById('limitReachedMsg').style.display = 'none';
+                // Reset UI
+                document.getElementById('msgPreview').style.display = 'none';
+                activateMailService();
+            }
+        }
+
+        function incrementUsage() {
+            const data = getStorageData();
+            const today = new Date().toISOString().split('T')[0];
+            
+            if(data.usage.date !== today) {
+                data.usage.date = today;
+                data.usage.count = 0;
+            }
+            
+            data.usage.count += 1;
+            saveStorageData(data);
+            updateLimitUI();
+        }
+
+        function updateLimitUI() {
+            const data = getStorageData();
+            const badge = document.getElementById('limitBadge');
+            const counter = document.getElementById('creditCounter');
+            
+            counter.innerText = `(${data.usage.count}/${DAILY_LIMIT})`;
+            
+            if(data.limitEnabled) {
+                badge.className = "limit-badge active";
+                badge.innerText = "LIMIT: ACTIVE";
+                badge.title = "Click to disable (Requires Password)";
+            } else {
+                badge.className = "limit-badge bypassed";
+                badge.innerText = "LIMIT: BYPASSED";
+                badge.title = "Click to enable";
+            }
+        }
+
+        function toggleAdminMode() {
+            const data = getStorageData();
+            
+            if(data.limitEnabled) {
+                const pass = prompt("Enter Admin Password to Bypass Limit:");
+                if(pass === ADMIN_PASS) {
+                    data.limitEnabled = false;
+                    saveStorageData(data);
+                    showNotification("Daily Limit Disabled");
+                    checkDailyLimitAndStart(); 
+                } else if(pass !== null) {
+                    showNotification("Incorrect Password");
+                }
+            } else {
+                data.limitEnabled = true;
+                saveStorageData(data);
+                showNotification("Daily Limit Enabled");
+                checkDailyLimitAndStart(); 
+            }
+            updateLimitUI();
+        }
+
+        // --- AUTHENTICATION FLOW ---
+        async function requestOtp() {
+            const chatId = document.getElementById('loginChatId').value.trim();
+            const btn = document.getElementById('btnRequestOtp');
+            
+            if(!chatId) return showNotification("Enter User ID");
+            
+            btn.disabled = true;
+            btn.innerText = "Sending Code...";
+
+            try {
+                generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+                
+                const msg = `🔐 **FMS Login Verification**\n\nYour One-Time Password is:\n\`${generatedOtp}\`\n\n_If you did not request this, ignore this message._`;
+                
+                const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: chatId, text: msg, parse_mode: 'Markdown' })
+                });
+
+                const json = await res.json();
+                if(!json.ok) throw new Error("Could not send message. Start bot first?");
+
+                switchStep('stepOtp');
+                clearOtpInputs();
+                setTimeout(() => document.querySelector('.otp-box').focus(), 100);
+                
+                currentUser = { id: chatId }; 
+
+            } catch(e) {
+                showNotification(e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Get OTP Code";
+            }
+        }
+
+        async function verifyOtp() {
+            const input = getOtpValue(); 
+            if(input !== generatedOtp) {
+                return showNotification("Invalid OTP Code");
+            }
+
+            const data = getStorageData();
+            data.chatId = currentUser.id;
+            data.isLoggedIn = true;
+            saveStorageData(data);
+
+            await fetchTelegramProfile(currentUser.id);
+            switchStep('stepDashboard');
+            checkDailyLimitAndStart();
+        }
+
+        async function fetchTelegramProfile(chatId) {
+            try {
+                const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChat?chat_id=${chatId}`);
+                const json = await res.json();
+                if(!json.ok) return false;
+
+                const u = json.result;
+                const name = (u.first_name || "") + " " + (u.last_name || "");
+                
+                document.getElementById('dashName').innerText = name.trim() || "Unknown";
+                document.getElementById('dashId').innerText = `ID: ${u.id}`;
+                
+                if(u.photo) {
+                    const fRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getFile?file_id=${u.photo.small_file_id}`);
+                    const fData = await fRes.json();
+                    if(fData.ok) {
+                        document.getElementById('dashAvatar').src = `https://api.telegram.org/file/bot${BOT_TOKEN}/${fData.result.file_path}`;
+                    }
+                } else {
+                     document.getElementById('dashAvatar').src = `https://api.dicebear.com/7.x/initials/svg?seed=${name}`;
+                }
+                return true;
+            } catch(e) {
+                return false;
+            }
+        }
+
+        function goBackToLogin() {
+            switchStep('stepLogin');
+            generatedOtp = null;
+        }
+
+        function logout() {
+            if(pollingInterval) clearInterval(pollingInterval);
+            const data = getStorageData();
+            data.isLoggedIn = false;
+            saveStorageData(data);
+            location.reload();
+        }
+
+        // --- MAIL SERVICE LOGIC ---
+        async function activateMailService() {
+            const elEmail = document.getElementById("generatedEmail");
+            
+            try {
+                elEmail.innerText = "Provisioning...";
+                elEmail.style.color = "var(--text-muted)";
+
+                const domainRes = await fetch(`${API_URL}/domains`);
+                const domainData = await domainRes.json();
+                const domain = domainData['hydra:member'][0].domain;
+
+                const user = "u" + Math.random().toString(36).substr(2,8);
+                const pwd = Math.random().toString(36).substr(2,10);
+                const address = `${user}@${domain}`;
+
+                await fetch(`${API_URL}/accounts`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ address: address, password: pwd })
+                });
+
+                const tokenRes = await fetch(`${API_URL}/token`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ address: address, password: pwd })
+                });
+                const tokenData = await tokenRes.json();
+                jwtToken = tokenData.token;
+
+                elEmail.innerText = address;
+                elEmail.style.color = "var(--accent)";
+                
+                log(`Session active: ${address}`, "success");
+
+                startMailListener(address);
+
+            } catch(e) {
+                elEmail.innerText = "Error";
+                log(e.message, "error");
+            }
+        }
+
+        function startMailListener(myEmail) {
+            log("Waiting for incoming mail...");
+            if(pollingInterval) clearInterval(pollingInterval);
+
+            pollingInterval = setInterval(async () => {
+                try {
+                    const res = await fetch(`${API_URL}/messages`, { headers: { "Authorization": `Bearer ${jwtToken}` } });
+                    const data = await res.json();
+                    
+                    if (data['hydra:member'] && data['hydra:member'].length > 0) {
+                        const msg = data['hydra:member'][0]; 
+                        if(!msg.seen) {
+                            const fullRes = await fetch(`${API_URL}/messages/${msg.id}`, { headers: { "Authorization": `Bearer ${jwtToken}` } });
+                            const fullMsg = await fullRes.json();
+
+                            // 1. SHOW IN DASHBOARD (LIVE MAILBOX)
+                            document.getElementById('msgFrom').innerText = fullMsg.from.name || fullMsg.from.address;
+                            document.getElementById('msgSubject').innerText = fullMsg.subject || "(No Subject)";
+                            // Show first 100 chars of content
+                            document.getElementById('msgBody').innerText = (fullMsg.intro || fullMsg.text || "No content").substring(0, 150) + "...";
+                            document.getElementById('msgPreview').style.display = "block";
+
+                            // 2. SEND TO TELEGRAM
+                            const text = `📨 **New Mail Received**\n\n**To:** \`${myEmail}\`\n**From:** ${fullMsg.from.name} <${fullMsg.from.address}>\n**Subject:** ${fullMsg.subject}\n\n${fullMsg.intro.substring(0, 300)}...`;
+                            
+                            const stored = getStorageData();
+                            await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ chat_id: stored.chatId, text: text, parse_mode: 'Markdown' })
+                            });
+
+                            // 3. MARK SEEN & TERMINATE
+                            await fetch(`${API_URL}/messages/${msg.id}`, {
+                                method: "PATCH",
+                                headers: { "Authorization": `Bearer ${jwtToken}`, "Content-Type": "application/json" },
+                                body: JSON.stringify({ seen: true })
+                            });
+
+                            terminateSession(true);
+                        }
+                    }
+                } catch(e) { console.error(e); }
+            }, 3000);
+        }
+
+        function terminateSession(wasSuccessful = false) {
+            if(pollingInterval) clearInterval(pollingInterval);
+            
+            const elEmail = document.getElementById("generatedEmail");
+            elEmail.innerText = "SESSION ENDED";
+            elEmail.style.color = "var(--danger)";
+            
+            if(wasSuccessful) {
+                log("Mail received. Session closed.", "success");
+                showNotification("Mail forwarded to Telegram");
+                incrementUsage(); 
+            } else {
+                log("Session stopped manually.", "error");
+            }
+
+            // Reload to clear state/get new mail
+            setTimeout(() => {
+                location.reload();
+            }, 4000); // 4 seconds to read the message on screen
+        }
+
+        // --- UTILS ---
+        function log(msg, type="info") {
+            const el = document.getElementById("consoleLogs");
+            const time = new Date().toLocaleTimeString('en-US', {hour12:false, hour:"2-digit", minute:"2-digit"});
+            let color = "#fafafa";
+            if(type === "error") color = "#ef4444";
+            if(type === "success") color = "#10b981";
+            el.innerHTML += `<div class="log-item" style="color:${color}"><span class="log-time">${time}</span> <span>${msg}</span></div>`;
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function showNotification(text) {
+            const container = document.getElementById("notificationContainer");
+            const n = document.createElement("div");
+            n.className = "notification";
+            n.innerHTML = text;
+            container.appendChild(n);
+            setTimeout(() => n.remove(), 3000);
+        }
+
+        function copyEmail() {
+            const t = document.getElementById("generatedEmail").innerText;
+            if(t.includes("...") || t.includes("SESSION")) return;
+            navigator.clipboard.writeText(t);
+            showNotification("Copied to clipboard");
+        }
+    </script>
+    
+    <!-- COPYRIGHT PROTECTION SCRIPT -->
+    <script type="text/javascript">
+    (function() {
+        var targetUrl = "https://fms365.blogspot.com/";
+        var elementId = "fms-copyright";
+        
+        function checkFooter() {
+            var el = document.getElementById(elementId);
+            
+            // 1. Check if element exists
+            if (!el) {
+                window.location.href = targetUrl;
+                return;
+            }
+            
+            // 2. Check if element is visible
+            var style = window.getComputedStyle(el);
+            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+                window.location.href = targetUrl;
+                return;
+            }
+            
+            // 3. Check if the link URL is correct
+            if (el.href !== targetUrl) {
+                window.location.href = targetUrl;
+            }
+        }
+
+        // Wait for page load then start checking
+        window.addEventListener('load', function() {
+            checkFooter();
+            // Check every 2 seconds to prevent removal via Inspect Element
+            setInterval(checkFooter, 2000); 
+        });
+    })();
+    </script>
+  <!-- COPYRIGHT PROTECTION SCRIPT -->
+    <script type="text/javascript">
+    (function() {
+        var targetUrl = "https://www.instagram.com/_priyangshu_2";
+        var elementId = "PS2006";
+        
+        function checkFooter() {
+            var el = document.getElementById(elementId);
+            
+            // 1. Check if element exists
+            if (!el) {
+                window.location.href = targetUrl;
+                return;
+            }
+            
+            // 2. Check if element is visible
+            var style = window.getComputedStyle(el);
+            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+                window.location.href = targetUrl;
+                return;
+            }
+            
+            // 3. Check if the link URL is correct
+            if (el.href !== targetUrl) {
+                window.location.href = targetUrl;
+            }
+        }
+
+        // Wait for page load then start checking
+        window.addEventListener('load', function() {
+            checkFooter();
+            // Check every 2 seconds to prevent removal via Inspect Element
+            setInterval(checkFooter, 2000); 
+        });
+    })();
+    </script>
+</body>
+</html>
